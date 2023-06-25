@@ -43,6 +43,11 @@ namespace Deform
 			}
 		}
 
+		public bool Persistence
+		{
+			get => persistence;
+			set => persistence = value;
+		}
 		public CullingMode CullingMode
 		{
 			get => cullingMode;
@@ -107,6 +112,7 @@ namespace Deform
 
 		public bool assignOriginalMeshOnDisable = true;
 
+		[SerializeField, HideInInspector] protected bool persistence = false;
 		[SerializeField, HideInInspector] protected UpdateMode updateMode = UpdateMode.Auto;
 		[SerializeField, HideInInspector] protected CullingMode cullingMode = CullingMode.DontUpdate;
 		[SerializeField, HideInInspector] protected NormalsRecalculation normalsRecalculation = NormalsRecalculation.Fast;
@@ -132,11 +138,11 @@ namespace Deform
 
 			if (Application.isPlaying && UpdateMode == UpdateMode.Auto)
 				Manager = DeformableManager.GetDefaultManager(true);
-			
+
 #if UNITY_EDITOR
 			UnityEditor.SceneManagement.EditorSceneManager.sceneSaving += OnSceneSaving;
 #endif
-			
+
 			InitializeData();
 		}
 
@@ -146,12 +152,12 @@ namespace Deform
 			DisposeData();
 			if (Manager != null)
 				Manager.RemoveDeformable(this);
-			
+
 #if UNITY_EDITOR
 			UnityEditor.SceneManagement.EditorSceneManager.sceneSaving -= OnSceneSaving;
 #endif
 		}
-		
+
 #if UNITY_EDITOR
 		private void OnSceneSaving(Scene scene, string path)
 		{
@@ -168,7 +174,7 @@ namespace Deform
 				return;
 			}
 #endif
-			
+
 			// If the update mode is set to auto and the frequency is not immediate
 			// the deformable needs to be updated immediately so there isn't a single
 			// frame where the mesh is not deformed
@@ -202,7 +208,7 @@ namespace Deform
 				data = new MeshData();
 			data.Initialize(gameObject);
 		}
-		
+
 		public virtual void InitializeData()
 		{
 #if UNITY_EDITOR
@@ -264,7 +270,7 @@ namespace Deform
 		{
 			if (ShouldCull(ignoreCullingMode))
 				return dependency;
-			
+
 			if (data.Target.GetGameObject() == null)
 				if (!data.Initialize(gameObject))
 					return dependency;
@@ -279,7 +285,7 @@ namespace Deform
 			// That will let us force this objects portion of the work to complete
 			// which will let us dispose of its data and avoid a leak.
 			handle = dependency;
-			
+
 			// If the mesh data has been modified, reset it so we don't deform it twice
 			if (currentModifiedDataFlags != DataFlags.None)
 				ResetDynamicData();
@@ -309,7 +315,7 @@ namespace Deform
 
 			// Store if the vertices have been modified. If not, we don't need to update normals/bounds
 			var dirtyVertices = (currentModifiedDataFlags | DataFlags.Vertices) > 0;
-			
+
 			if (dirtyVertices)
 			{
 				if (NormalsRecalculation == NormalsRecalculation.Fast)
@@ -336,7 +342,7 @@ namespace Deform
 		}
 
 		public JobHandle Schedule(JobHandle dependency = default) => Schedule(false, dependency);
-		
+
 		/// <summary>
 		/// Sends native mesh data to the mesh, updates the mesh collider if required and then resets the native mesh data.
 		/// </summary>
@@ -363,6 +369,7 @@ namespace Deform
 		/// </summary>
 		public void ResetMesh()
 		{
+			data.ResetData(DataFlags.All);
 			data.ApplyOriginalData();
 		}
 
@@ -385,13 +392,15 @@ namespace Deform
 		/// <summary>
 		/// Sends the original native mesh data to the dynamic mesh data.
 		/// </summary>
-		protected void ResetDynamicData()
+		public void ResetDynamicData()
 		{
-			data.ResetData(currentModifiedDataFlags);
-			
+			if (!persistence)
+				data.ResetData(currentModifiedDataFlags);
+
 			lastModifiedDataFlags = currentModifiedDataFlags;
 			currentModifiedDataFlags = DataFlags.None;
 		}
+
 
 		/// <summary>
 		/// Updates the mesh collider, if it exists.

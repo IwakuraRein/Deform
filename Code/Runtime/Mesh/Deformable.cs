@@ -371,6 +371,11 @@ namespace Deform
 		{
 			data.ResetData(DataFlags.All);
 			data.ApplyOriginalData();
+
+			if (colliderRecalculation == ColliderRecalculation.Auto)
+			{
+                RecalculateMeshCollider();
+            }
 		}
 
 		/// <summary>

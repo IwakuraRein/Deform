@@ -22,7 +22,7 @@ namespace DeformEditor
 
 		private static class Content
 		{
-			public static readonly GUIContent Persistence = new GUIContent(text: "Persistence", tooltip: "Rreset the mesh to origin when invoking a new deformation.");
+			//public static readonly GUIContent Persistence = new GUIContent(text: "Persistence", tooltip: "Rreset the mesh to origin when invoking a new deformation.");
 			public static readonly GUIContent UpdateMode = new GUIContent(text: "Update Mode", tooltip: "Auto: Gets updated by a manager.\nPause: Never updated or reset.\nStop: Mesh is reverted to it's undeformed state until mode is switched.\nCustom: Allows updates, but not from a Deformable Manager.");
 			public static readonly GUIContent CullingMode = new GUIContent(text: "Culling Mode", tooltip: "Always Update: Update everything regardless of renderer visibility.\n\nDon't Update: Do not update unless renderer is visible. When the deformers aren't recalculated, bounds cannot be updated which may result in animated deformables not reappearing on screen.");
 			public static readonly GUIContent NormalsRecalculation = new GUIContent(text: "Normals", tooltip: "Auto: Normals are auto calculated after the mesh is deformed; overwriting any changes made by deformers.\nNone: Normals aren't modified by the Deformable.");
@@ -42,12 +42,20 @@ namespace DeformEditor
 				new GUIContent (text: "Clean", tooltip: "Remove all null deformers from the deformer list."),
 				new GUIContent (text: "Save Obj", tooltip: "Save the current mesh as a .obj file in the project. (Doesn't support vertex colors)"),
 				new GUIContent (text: "Save Asset", tooltip: "Save the current mesh as a mesh asset file in the project.")
-			};
+            };
+			public static readonly GUIContent[] UtilityToolbarWithReset =
+			{
+				new GUIContent (text: "Clear", tooltip: "Remove all deformers from the deformer list."),
+				new GUIContent (text: "Clean", tooltip: "Remove all null deformers from the deformer list."),
+				new GUIContent (text: "Save Obj", tooltip: "Save the current mesh as a .obj file in the project. (Doesn't support vertex colors)"),
+				new GUIContent (text: "Save Asset", tooltip: "Save the current mesh as a mesh asset file in the project."),
+                new GUIContent (text: "Reset Mesh", tooltip: "Reset the mesh.")
+            };
 		}
 
 		private class Properties
 		{
-			public SerializedProperty Persistence;
+			//public SerializedProperty Persistence;
 			public SerializedProperty UpdateMode;
 			public SerializedProperty CullingMode;
 			public SerializedProperty NormalsRecalculation;
@@ -59,7 +67,7 @@ namespace DeformEditor
 
 			public Properties(SerializedObject obj)
 			{
-                Persistence = obj.FindProperty("persistence");
+                //Persistence = obj.FindProperty("persistence");
 				UpdateMode = obj.FindProperty("updateMode");
 				CullingMode = obj.FindProperty("cullingMode");
 				NormalsRecalculation = obj.FindProperty("normalsRecalculation");
@@ -113,7 +121,7 @@ namespace DeformEditor
 
 		protected virtual void DrawMainSettings()
 		{
-            EditorGUILayout.PropertyField(properties.Persistence, Content.Persistence);
+            //EditorGUILayout.PropertyField(properties.Persistence, Content.Persistence);
 			using (var check = new EditorGUI.ChangeCheckScope())
 			{
 				EditorGUILayout.PropertyField(properties.UpdateMode, Content.UpdateMode);
@@ -237,8 +245,12 @@ namespace DeformEditor
 		{
 			using (new EditorGUILayout.HorizontalScope())
 			{
-				var selectedIndex = GUILayout.Toolbar(-1, Content.UtilityToolbar, EditorStyles.miniButton, GUILayout.MinWidth(0));
-				switch (selectedIndex)
+				int selectedIndex;
+				if (!((Deformable)target).Persistence)
+                    selectedIndex = GUILayout.Toolbar(-1, Content.UtilityToolbar, EditorStyles.miniButton, GUILayout.MinWidth(0));
+                else
+                    selectedIndex = GUILayout.Toolbar(-1, Content.UtilityToolbarWithReset, EditorStyles.miniButton, GUILayout.MinWidth(0));
+                switch (selectedIndex)
 				{
 					default:
 						throw new System.ArgumentException($"No valid action for toolbar index {selectedIndex}.");
@@ -286,6 +298,9 @@ namespace DeformEditor
 							AssetDatabase.CreateAsset(Instantiate(deformable.GetMesh()), assetPath);
 							AssetDatabase.SaveAssets();
 						}
+						break;
+					case 4:
+                        ((Deformable)target).ResetMesh();
 						break;
 				}
 			}

@@ -15,7 +15,7 @@
   ],
   "dependencies": {
     "com.unity.burst": "1.6.5",
-    "com.unity.collections": "1.2.3"
+    "com.unity.collections": "1.2.3",
     "com.unity.jobs": "0.50.0-preview.8"
   }
 }
